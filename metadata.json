@@ -1,0 +1,6 @@
+{
+  "name": "S-Call Hub",
+  "description": "S-Call Hub - The world's best AI voice agent and conversational AI automation platform. Book appointments, qualify leads, and handle support 24/7.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
