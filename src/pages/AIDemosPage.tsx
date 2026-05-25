@@ -271,7 +271,8 @@ function LiveChatInterface({ demo, onBack, onOpenBookCall }: { demo: any, onBack
             synth.speak(utterance);
           }
         } catch (err) {
-          setMessages([{ role: 'ai', text: "Connection error." }]);
+          console.error('Initial Chat API Error:', err);
+          setMessages([{ role: 'ai', text: "I'm having trouble connecting to the AI services right now. Please ensure the backend is running and the Gemini API key is configured correctly." }]);
         } finally {
           setIsTyping(false);
         }
@@ -364,7 +365,8 @@ function LiveChatInterface({ demo, onBack, onOpenBookCall }: { demo: any, onBack
       setMessages(p => [...p, { role: 'ai', text: aiResponseText }]);
       speakText(aiResponseText);
     } catch (err) {
-      setMessages(p => [...p, { role: 'ai', text: "Connection error." }]);
+      console.error('Chat API Error:', err);
+      setMessages(p => [...p, { role: 'ai', text: "I'm having trouble connecting to the AI services right now." }]);
     } finally {
       setIsTyping(false);
     }

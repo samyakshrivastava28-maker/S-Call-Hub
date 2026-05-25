@@ -220,14 +220,38 @@ app.post("/api/signup", async (req, res) => {
   res.json({ success: true, message: "User signed up & notified" });
 });
 
-app.post("/api/login", (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ success: false, message: "Email and password are required." });
   }
   const cleanEmail = String(email).trim().toLowerCase();
   const user = users.find(u => u.email === cleanEmail && u.password === password);
+  
   if (user) {
+    if (process.env.SMTP_USER) {
+      try {
+        // Welcome back email to user
+        await transporter.sendMail({
+          from: `"S-Call Hub" <${process.env.SMTP_USER}>`,
+          to: cleanEmail,
+          subject: "Welcome back to S-Call Hub!",
+          text: `Hi ${user.name},\n\nWelcome back to S-Call Hub! We're glad to see you again.\n\nBest regards,\nThe S-Call Hub Team`,
+        });
+        
+        // Admin notification email
+        await transporter.sendMail({
+          from: `"S-Call Hub" <${process.env.SMTP_USER}>`,
+          to: process.env.SMTP_USER,
+          subject: "User Login Notification",
+          text: `User Login Notification\n\nName: ${user.name}\nEmail: ${cleanEmail}`,
+        });
+        console.log(`Login emails sent for ${cleanEmail}`);
+      } catch (error) {
+        console.error("Failed to send login notification emails:", error);
+      }
+    }
+    
     res.json({ success: true, user: { name: user.name, email: user.email } });
   } else {
     // For demo purposes, if not found but generic format, just auth anyway
