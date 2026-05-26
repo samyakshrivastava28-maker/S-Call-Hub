@@ -23,7 +23,7 @@ export default function LoginPage() {
     setError('');
     try {
       // Hit backend to trigger login notification emails (Primary for demo)
-      const res = await fetch('/api/login', {
+      const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: password || 'firebase-user' })
@@ -63,7 +63,7 @@ export default function LoginPage() {
       const user = await signInWithGoogle();
       
       if (user) {
-        await fetch('/api/login', {
+        await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: user.email, password: 'firebase-user' })

@@ -22,7 +22,7 @@ export default function BookCallModal({ isOpen, onClose }: BookCallModalProps) {
     
     // Save to DB via backend proxy
     try {
-      await fetch('/api/leads', {
+      await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

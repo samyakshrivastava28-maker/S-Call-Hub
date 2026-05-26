@@ -24,7 +24,7 @@ export default function SignupPage() {
     setError('');
     try {
       // Hit backend to send notification email (Primary action for demo)
-      const res = await fetch('/api/signup', {
+      const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -59,7 +59,7 @@ export default function SignupPage() {
       
       if (user) {
         // Notify backend about new signup
-        await fetch('/api/signup', {
+        await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

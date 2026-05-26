@@ -251,7 +251,7 @@ function LiveChatInterface({ demo, onBack, onOpenBookCall }: { demo: any, onBack
       const startConversation = async () => {
         setIsTyping(true);
         try {
-          const res = await fetch('/api/gemini-chat', {
+          const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/gemini-chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -351,7 +351,7 @@ function LiveChatInterface({ demo, onBack, onOpenBookCall }: { demo: any, onBack
     setIsTyping(true);
     
     try {
-      const res = await fetch('/api/gemini-chat', {
+      const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/gemini-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

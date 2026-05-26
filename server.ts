@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
@@ -11,6 +12,8 @@ import admin from "firebase-admin";
 dotenv.config();
 
 const app = express();
+
+app.use(cors({ origin: "*" }));
 
 // Security Feature 1: Explicit JSON parsing size limit (DOS defense)
 app.use(express.json({ limit: "15kb" }));
@@ -88,7 +91,7 @@ function globalRateLimiter(req: express.Request, res: express.Response, next: ex
 
 app.use("/api/", globalRateLimiter);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Initialize Firebase Admin securely
 let firebaseAdminAuth: admin.auth.Auth | null = null;
