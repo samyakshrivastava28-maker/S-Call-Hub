@@ -254,7 +254,24 @@ app.post("/api/login", async (req, res) => {
     
     res.json({ success: true, user: { name: user.name, email: user.email } });
   } else {
-    // For demo purposes, if not found but generic format, just auth anyway
+    if (process.env.SMTP_USER) {
+      try {
+        await transporter.sendMail({
+          from: `"S-Call Hub" <${process.env.SMTP_USER}>`,
+          to: cleanEmail,
+          subject: "Welcome back to S-Call Hub!",
+          text: `Hi there,\n\nWelcome back to S-Call Hub! We're glad to see you again.\n\nBest regards,\nThe S-Call Hub Team`,
+        });
+        await transporter.sendMail({
+          from: `"S-Call Hub" <${process.env.SMTP_USER}>`,
+          to: process.env.SMTP_USER,
+          subject: "User Login Notification",
+          text: `User Login Notification\n\nEmail: ${cleanEmail}`,
+        });
+      } catch (error) {
+        console.error("Failed to send login emails:", error);
+      }
+    }
     res.json({ success: true, user: { name: "Demo User", email: cleanEmail } });
   }
 });

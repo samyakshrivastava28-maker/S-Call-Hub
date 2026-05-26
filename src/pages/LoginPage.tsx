@@ -23,6 +23,14 @@ export default function LoginPage() {
     setError('');
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      
+      // Hit backend to trigger login notification emails
+      await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: 'firebase-user' })
+      }).catch(console.error);
+
       navigate('/demos');
     } catch (err: any) {
       console.error(err);
@@ -42,7 +50,16 @@ export default function LoginPage() {
     setError('');
     setDiagError(null);
     try {
-      await signInWithGoogle();
+      const user = await signInWithGoogle();
+      
+      if (user) {
+        await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user.email, password: 'firebase-user' })
+        }).catch(console.error);
+      }
+
       navigate('/demos');
     } catch (err: any) {
       if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
