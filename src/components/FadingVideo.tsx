@@ -30,7 +30,7 @@ export default function FadingVideo() {
           muted
           loop
           playsInline
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover object-center"
         />
       </AnimatePresence>
       <div className="absolute inset-0 bg-gradient-to-b from-s-black/60 via-s-black/40 to-s-black pointer-events-none" />

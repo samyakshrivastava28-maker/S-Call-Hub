@@ -15,7 +15,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   }
 
   if (!user) {
-    return <Navigate to="/signup" state={{ message: "First you have to signup to see the demos.", from: location }} replace />;
+    return <Navigate to="/signup" state={{ message: "First you have to signup to interact with our agents.", from: location }} replace />;
   }
 
   return children;

@@ -32,7 +32,7 @@ export default function BookCallModal({ isOpen, onClose }: BookCallModalProps) {
     }
     
     // Construct WhatsApp Link
-    const message = `Hello S-Call Hub! I'd like to request a free real call demo.%0A%0A*Name:* ${encodeURIComponent(formData.name)}%0A*Phone Number:* ${encodeURIComponent(formData.phone)}%0A*Work:* ${encodeURIComponent(formData.work)}%0A*Time Window:* ${encodeURIComponent(formData.time)}`;
+    const message = `Hello S-Call Hub! I'd like to request a live agent callback.%0A%0A*Name:* ${encodeURIComponent(formData.name)}%0A*Phone Number:* ${encodeURIComponent(formData.phone)}%0A*Work:* ${encodeURIComponent(formData.work)}%0A*Time Window:* ${encodeURIComponent(formData.time)}`;
     const whatsappUrl = `https://wa.me/918305500767?text=${message}`;
     window.open(whatsappUrl, '_blank');
     

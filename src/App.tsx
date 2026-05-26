@@ -7,7 +7,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import LandingPage from './pages/LandingPage';
-import AIDemosPage from './pages/AIDemosPage';
+import AIAgentsPage from './pages/AIAgentsPage';
 import ContactPage from './pages/ContactPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -29,10 +29,10 @@ export default function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route 
-                path="/demos" 
+                path="/agents" 
                 element={
                   <ProtectedRoute>
-                    <AIDemosPage />
+                    <AIAgentsPage />
                   </ProtectedRoute>
                 } 
               />

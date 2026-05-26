@@ -22,22 +22,32 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      
-      // Hit backend to trigger login notification emails
-      await fetch('/api/login', {
+      // Hit backend to trigger login notification emails (Primary for demo)
+      const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: 'firebase-user' })
-      }).catch(console.error);
+        body: JSON.stringify({ email, password: password || 'firebase-user' })
+      });
+      const data = await res.json();
+      
+      try {
+        // Firebase Auth (Secondary)
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (fbErr: any) {
+        console.warn("Firebase Auth Error (Fallback mode active):", fbErr);
+        if (!data.success) {
+          throw fbErr; // If backend also fails, throw error
+        }
+      }
 
-      navigate('/demos');
+      navigate('/agents');
     } catch (err: any) {
       console.error(err);
       if (err.code === 'auth/invalid-credential') {
         setError('Invalid email or password. Please check your credentials and try again.');
+        setDiagError({ code: err.code, message: err.message });
       } else {
-        setError(err.message || 'Failed to login.');
+        setError(err.message || 'Failed to login. Please try again.');
       }
     }
     setLoading(false);
@@ -60,7 +70,7 @@ export default function LoginPage() {
         }).catch(console.error);
       }
 
-      navigate('/demos');
+      navigate('/agents');
     } catch (err: any) {
       if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
         console.error(err);

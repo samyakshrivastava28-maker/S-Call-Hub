@@ -141,7 +141,7 @@ const leads: any[] = [];
 const users: any[] = [];
 
 // API Routes
-app.post("/api/leads", (req, res) => {
+app.post("/api/leads", async (req, res) => {
   const { name, phone, business, work, time } = req.body;
   
   const finalWork = work || business;
@@ -163,9 +163,22 @@ app.post("/api/leads", (req, res) => {
   };
 
   leads.push({ ...cleanLead, id: Date.now() });
-  // Pretending to send WhatsApp
-  console.log("Mocking WhatsApp to 8305500767:", cleanLead);
-  res.json({ success: true, message: "Lead saved safely" });
+  
+  if (process.env.SMTP_USER) {
+    try {
+      await transporter.sendMail({
+        from: `"S-Call Hub" <${process.env.SMTP_USER}>`,
+        to: process.env.SMTP_USER,
+        subject: "New Business Lead",
+        text: `New Lead from S-Call Hub!\n\nName: ${cleanLead.name}\nPhone: ${cleanLead.phone}\nWork/Business: ${cleanLead.work}\nTime Window: ${cleanLead.time}`,
+      });
+      console.log(`Lead notification sent to ${process.env.SMTP_USER}`);
+    } catch (error: any) {
+      console.error("Failed to send lead notification securely:", error);
+    }
+  }
+
+  res.json({ success: true, message: "Lead processed successfully" });
 });
 
 app.post("/api/signup", async (req, res) => {
@@ -207,7 +220,7 @@ app.post("/api/signup", async (req, res) => {
         from: `"S-Call Hub" <${process.env.SMTP_USER}>`,
         to: cleanEmail,
         subject: "Welcome to S-Call Hub!",
-        text: `Hi ${cleanName},\n\nWelcome to S-Call Hub! We're excited to have you on board. You can now explore our AI voice and text agent demos.\n\nBest regards,\nThe S-Call Hub Team`,
+        text: `Hi ${cleanName},\n\nWelcome to S-Call Hub! We're excited to have you on board. You can now explore our AI voice and text agents.\n\nBest regards,\nThe S-Call Hub Team`,
       });
       console.log(`Welcome email sent to ${cleanEmail}`);
     } else {
@@ -272,7 +285,7 @@ app.post("/api/login", async (req, res) => {
         console.error("Failed to send login emails:", error);
       }
     }
-    res.json({ success: true, user: { name: "Demo User", email: cleanEmail } });
+    res.json({ success: true, user: { name: "User", email: cleanEmail } });
   }
 });
 
@@ -401,7 +414,7 @@ app.post("/api/gemini-chat", async (req, res) => {
     }] as any : undefined;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: message,
       config: {
         systemInstruction,
@@ -436,7 +449,7 @@ app.post("/api/gemini-chat", async (req, res) => {
           if (calRes.ok) {
             // Re-prompt model with success
             const followup = await ai.models.generateContent({
-               model: "gemini-3.5-flash",
+               model: "gemini-2.5-flash",
                contents: [
                  { role: "user", parts: [{ text: message }] },
                  { role: "model", parts: [{ functionCall: call }] },

@@ -10,12 +10,37 @@ interface ChatMessage {
 
 export default function AIAssistantWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'ai', text: 'Hi! I am the S-Call Hub Assistant. How can I help you today?' }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Show tooltip on load after a slight delay
+    const initialTimer = setTimeout(() => {
+      setShowTooltip(true);
+      setTimeout(() => setShowTooltip(false), 5000);
+    }, 2000);
+
+    // Pop up the tooltip if closed every 30 seconds
+    const interval = setInterval(() => {
+      setIsOpen(p => {
+        if (!p) {
+          setShowTooltip(true);
+          setTimeout(() => setShowTooltip(false), 5000);
+        }
+        return p;
+      });
+    }, 30000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,10 +63,17 @@ export default function AIAssistantWidget() {
           systemInstruction: "You are a helpful AI assistant for S-Call Hub. You MUST answer every question the user asks. Keep your answers extremely concise (1-2 sentences max) for high speed. If the user asks for the price, pricing, or cost, you MUST instruct them to use the 'Book a Call' button on the menu or visit the [Contact Page](/contact)."
         })
       });
-      const data = await res.json();
+      
+      const data = await res.json().catch(() => ({}));
+      
+      if (!res.ok) {
+        throw new Error(data.error || `Server error: ${res.status}`);
+      }
+      
       setMessages(p => [...p, { role: 'ai', text: data.text || "Sorry, I couldn't process that." }]);
-    } catch (err) {
-      setMessages(p => [...p, { role: 'ai', text: "Connection error." }]);
+    } catch (err: any) {
+      console.error(err);
+      setMessages(p => [...p, { role: 'ai', text: `Connection error: ${err.message}` }]);
     } finally {
       setIsTyping(false);
     }
@@ -49,12 +81,37 @@ export default function AIAssistantWidget() {
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className={`fixed bottom-4 right-4 md:bottom-6 md:right-6 p-4 rounded-full bg-white text-black shadow-xl md:shadow-2xl hover:scale-105 transition-transform z-50 ${isOpen ? 'hidden' : 'block'}`}
-      >
-        <MessageSquare size={24} />
-      </button>
+      <div className={`fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 flex flex-col items-end ${isOpen ? 'hidden' : 'flex'}`}>
+        <AnimatePresence>
+          {showTooltip && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="mb-4 bg-white text-black px-4 py-2.5 rounded-2xl rounded-br-sm shadow-xl flex items-center space-x-2 border border-black/5"
+            >
+              <span className="text-sm font-medium">S-Call Hub Support</span>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setShowTooltip(false); }}
+                className="text-gray-400 hover:text-black transition-colors"
+                aria-label="Close message"
+              >
+                <X size={14} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        <button
+          onClick={() => {
+            setIsOpen(true);
+            setShowTooltip(false);
+          }}
+          className="p-4 rounded-full bg-white text-black shadow-xl md:shadow-2xl hover:scale-105 transition-transform"
+        >
+          <MessageSquare size={24} />
+        </button>
+      </div>
 
       <AnimatePresence>
         {isOpen && (

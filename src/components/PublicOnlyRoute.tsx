@@ -14,7 +14,7 @@ export default function PublicOnlyRoute({ children }: { children: React.ReactNod
   }
 
   if (user) {
-    return <Navigate to="/demos" replace />;
+    return <Navigate to="/agents" replace />;
   }
 
   return children;

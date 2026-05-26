@@ -64,7 +64,7 @@ export default function LandingPage() {
                 <span>Launch AI Agent</span>
                 <ArrowRight size={18} className="ml-2" />
               </Link>
-              <Link to="/demos" className="px-8 py-4 text-base w-full sm:w-auto flex items-center justify-center rounded-full border border-white/10 hover:bg-white/5 transition-colors">
+              <Link to="/agents" className="px-8 py-4 text-base w-full sm:w-auto flex items-center justify-center rounded-full border border-white/10 hover:bg-white/5 transition-colors">
                 <span>See Examples</span>
               </Link>
               <a href="#features" className="text-sm font-medium tracking-wide hover:text-white text-s-gray-400 transition-colors sm:ml-4">

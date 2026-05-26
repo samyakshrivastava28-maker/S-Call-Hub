@@ -13,7 +13,7 @@ interface ChatMessage {
   text: string;
 }
 
-export default function AIDemosPage() {
+export default function AIAgentsPage() {
   const [activeDemo, setActiveDemo] = useState<any | null>(null);
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
 
@@ -130,7 +130,7 @@ Features to handle:
         {!activeDemo ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="text-center mb-16">
-              <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">Interactive <span className="gradient-text">AI Demos</span></h1>
+              <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">Interactive <span className="gradient-text">AI Agents</span></h1>
               <p className="text-s-gray-400 max-w-2xl mx-auto">Experience next-generation conversational AI in both Voice and Text modes.</p>
             </div>
 
@@ -149,9 +149,9 @@ Features to handle:
                   <div>
                     <div className="inline-flex items-center space-x-2 bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 rounded-full text-xs text-emerald-400 font-semibold mb-3">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-                      <span>Free Live Call Dialer</span>
+                      <span>Free Live Call Setup</span>
                     </div>
-                    <h3 className="text-xl sm:text-2xl font-display font-bold text-white mb-2">Want a real call demo for free?</h3>
+                    <h3 className="text-xl sm:text-2xl font-display font-bold text-white mb-2">Want a real call setup for free?</h3>
                     <p className="text-sm text-s-gray-400">
                       Experience how our ultra-fast AI voice agents sound on an actual phone line! Tap here to book a quick callback and we'll dial your phone in real time.
                     </p>
@@ -378,7 +378,7 @@ function LiveChatInterface({ demo, onBack, onOpenBookCall }: { demo: any, onBack
         window.speechSynthesis.cancel();
         onBack();
       }} className="text-s-gray-400 hover:text-white text-sm tracking-wide mb-6 flex items-center">
-        ← Back to Demos
+        ← Back to Agents
       </button>
 
       <div className="glass-panel overflow-hidden border border-white/10 flex flex-col h-[82vh] min-h-[480px] max-h-[750px] md:h-[70vh]">

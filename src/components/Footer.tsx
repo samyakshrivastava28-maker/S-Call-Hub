@@ -20,7 +20,7 @@ export default function Footer() {
             <h4 className="font-semibold tracking-wide text-sm uppercase text-s-gray-300">Quick Links</h4>
             <div className="flex flex-col space-y-2 text-sm text-s-gray-400">
               <Link to="/" className="hover:text-white transition-colors">Home</Link>
-              <Link to="/demos" className="hover:text-white transition-colors">AI Demos</Link>
+              <Link to="/agents" className="hover:text-white transition-colors">Our Agents</Link>
               <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
               <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             </div>
