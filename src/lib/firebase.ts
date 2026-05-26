@@ -7,7 +7,9 @@ const configFiles = import.meta.glob('../../firebase-applet-config.json', { eage
 const localConfig = configFiles['../../firebase-applet-config.json']?.default || {};
 
 let processedApiKey = import.meta.env.VITE_FIREBASE_API_KEY;
-if (processedApiKey && !processedApiKey.startsWith('AIza')) {
+if (import.meta.env.VITE_FIREBASE_API_KEY_B64) {
+  try { processedApiKey = atob(import.meta.env.VITE_FIREBASE_API_KEY_B64); } catch (e) {}
+} else if (processedApiKey && !processedApiKey.startsWith('AIza')) {
   try { processedApiKey = atob(processedApiKey); } catch (e) {}
 }
 
