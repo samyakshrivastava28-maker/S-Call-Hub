@@ -135,11 +135,12 @@ async function sendEmailJs(template_id: string, to_email: string, subject: strin
   const private_key = use_second_account && process.env.EMAILJS_PRIVATE_KEY_2 ? process.env.EMAILJS_PRIVATE_KEY_2 : process.env.EMAILJS_PRIVATE_KEY;
 
   if (!service_id || !template_id || !public_key) {
-    console.warn("[EmailJS] Credentials missing. Would have sent:", {to_email, subject});
+    console.warn("[EmailJS] Credentials missing. Would have sent:", {to_email, subject, service_id, template_id, public_key, use_second_account});
     return false;
   }
+  
   try {
-    await emailjs.send(
+    const res = await emailjs.send(
       service_id,
       template_id,
       {
@@ -155,15 +156,42 @@ async function sendEmailJs(template_id: string, to_email: string, subject: strin
       }
     );
     return true;
-  } catch (error) {
-    console.error("EmailJS Error:", error);
+  } catch (error: any) {
+    console.error("[EmailJS] Error calling emailjs.send:", error?.message || error);
+    if (error?.status && error?.text) {
+      console.error(`[EmailJS] HTTP Status: ${error.status} - ${error.text}`);
+    } else if (error?.response) {
+      console.error("[EmailJS] HTTP Response:", error.response);
+    }
     return false;
   }
 }
 
-// In-memory leads DB (mock)
-const leads: any[] = [];
-const users: any[] = [];
+// Simple File-based DB
+const DB_FILE = path.join(process.cwd(), 'database.json');
+let dbData = { leads: [], users: [] };
+
+try {
+  if (fs.existsSync(DB_FILE)) {
+    const data = fs.readFileSync(DB_FILE, 'utf-8');
+    dbData = JSON.parse(data);
+  } else {
+    fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+  }
+} catch (e) {
+  console.error("Failed to load local DB:", e);
+}
+
+const leads: any[] = dbData.leads || [];
+const users: any[] = dbData.users || [];
+
+function saveDb() {
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify({ leads, users }, null, 2));
+  } catch (e) {
+    console.error("Failed to save local DB:", e);
+  }
+}
 
 // API Routes
 app.post("/api/leads", async (req, res) => {
@@ -188,14 +216,13 @@ app.post("/api/leads", async (req, res) => {
   };
 
   leads.push({ ...cleanLead, id: Date.now() });
+  saveDb();
   
-  if (process.env.SMTP_USER) {
-    try {
-      await sendEmailJs(process.env.EMAILJS_TEMPLATE_LEAD || "", process.env.SMTP_USER || "admin@example.com", "New Business Lead", `New Lead from S-Call Hub!\n\nName: ${cleanLead.name}\nPhone: ${cleanLead.phone}\nWork/Business: ${cleanLead.work}\nTime Window: ${cleanLead.time}`);
-      console.log(`Lead notification sent to ${process.env.SMTP_USER}`);
-    } catch (error: any) {
-      console.error("Failed to send lead notification securely:", error);
-    }
+  const adminEmail = process.env.SMTP_USER || "s.callhub2811@gmail.com";
+  try {
+    await sendEmailJs(process.env.EMAILJS_TEMPLATE_LEAD || "", adminEmail, "New Business Lead", `New Lead from S-Call Hub!\n\nName: ${cleanLead.name}\nPhone: ${cleanLead.phone}\nWork/Business: ${cleanLead.work}\nTime Window: ${cleanLead.time}`);
+  } catch (error: any) {
+    console.error("Failed to send lead notification securely");
   }
 
   res.json({ success: true, message: "Lead processed successfully" });
@@ -224,20 +251,14 @@ app.post("/api/signup", async (req, res) => {
 
   const userData = { name: cleanName, email: cleanEmail, password };
   users.push({ ...userData, id: Date.now() });
+  saveDb();
   
   try {
-    if (process.env.SMTP_USER) {
-      // Secure SMTP headers to prevent Email Header Injection
-      await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_SIGNUP || "", process.env.SMTP_USER || "admin@example.com", "New User Signup", `New User Signup\n\nName: ${cleanName}\nEmail: ${cleanEmail}`);
-      console.log(`Email sent to ${process.env.SMTP_USER}`);
-
-      await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME || "", cleanEmail, "Welcome to S-Call Hub!", `Hi ${cleanName},\n\nWelcome to S-Call Hub! We're excited to have you on board. You can now explore our AI voice and text agents.\n\nBest regards,\nThe S-Call Hub Team`);
-      console.log(`Welcome email sent to ${cleanEmail}`);
-    } else {
-      console.log("SMTP_USER not configured. Mocking Email to s.callhub2811@gmail.com:", userData);
-    }
+    const adminEmail = process.env.SMTP_USER || "s.callhub2811@gmail.com";
+    await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_SIGNUP || "", adminEmail, "New User Signup", `New User Signup\n\nName: ${cleanName}\nEmail: ${cleanEmail}`);
+    await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME || "", cleanEmail, "Welcome to S-Call Hub!", `Hi ${cleanName},\n\nWelcome to S-Call Hub! We're excited to have you on board. You can now explore our AI voice and text agents.\n\nBest regards,\nThe S-Call Hub Team`);
   } catch (error: any) {
-    console.error("Failed to send email securely:", error);
+    console.error("Failed to send email securely");
   }
   
   res.json({ success: true, message: "User signed up & notified" });
@@ -251,31 +272,24 @@ app.post("/api/login", async (req, res) => {
   const cleanEmail = String(email).trim().toLowerCase();
   const user = users.find(u => u.email === cleanEmail && u.password === password);
   
+  const adminEmail = process.env.SMTP_USER || "s.callhub2811@gmail.com";
   if (user) {
-    if (process.env.SMTP_USER) {
-      try {
-        // Welcome back email to user
-        await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME_BACK || "", cleanEmail, "Welcome back to S-Call Hub!", `Hi ${user.name},\n\nWelcome back to S-Call Hub! We're glad to see you again.\n\nBest regards,\nThe S-Call Hub Team`, "", "", true);
-        
-        // Admin notification email
-        await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_LOGIN || "", process.env.SMTP_USER || "admin@example.com", "User Login Notification", `User Login Notification\n\nName: ${user.name}\nEmail: ${cleanEmail}`, "", "", true);
-        console.log(`Login emails sent for ${cleanEmail}`);
-      } catch (error) {
-        console.error("Failed to send login notification emails:", error);
-      }
+    try {
+      await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME_BACK || "", cleanEmail, "Welcome back to S-Call Hub!", `Hi ${user.name},\n\nWelcome back to S-Call Hub! We're glad to see you again.\n\nBest regards,\nThe S-Call Hub Team`, "", "", true);
+      await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_LOGIN || "", adminEmail, "User Login Notification", `User Login Notification\n\nName: ${user.name}\nEmail: ${cleanEmail}`, "", "", true);
+    } catch (error) {
+      console.error("Failed to send login notification emails");
     }
     
     res.json({ success: true, user: { name: user.name, email: user.email } });
   } else {
-    if (process.env.SMTP_USER) {
-      try {
-        await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME_BACK || "", cleanEmail, "Welcome back to S-Call Hub!", `Hi there,\n\nWelcome back to S-Call Hub! We're glad to see you again.\n\nBest regards,\nThe S-Call Hub Team`, "", "", true);
-        await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_LOGIN || "", process.env.SMTP_USER || "admin@example.com", "User Login Notification", `User Login Notification\n\nEmail: ${cleanEmail}`, "", "", true);
-      } catch (error) {
-        console.error("Failed to send login emails:", error);
-      }
+    try {
+      await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME_BACK || "", cleanEmail, "Welcome back to S-Call Hub!", `Hi there,\n\nWelcome back to S-Call Hub! We're glad to see you again.\n\nBest regards,\nThe S-Call Hub Team`, "", "", true);
+      await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_LOGIN || "", adminEmail, "User Login Notification", `User Login Notification\n\nEmail: ${cleanEmail}`, "", "", true);
+    } catch (error) {
+      console.error("Failed to send login notification emails");
     }
-    res.json({ success: true, user: { name: "User", email: cleanEmail } });
+    res.json({ success: false, message: "Invalid credentials" });
   }
 });
 
@@ -300,33 +314,29 @@ app.post("/api/forgot-password", async (req, res) => {
 
     console.log(`Password reset requested for ${email}: ${resetLink}`);
 
-    if (process.env.SMTP_USER && process.env.SMTP_USER !== "fake@example.com") {
-      await sendEmailJs(
-        process.env.EMAILJS_TEMPLATE_RESET || "",
-        email, 
-        "Reset your S-Call Hub Password", 
-        "We received a request to reset your password. Please use the following link: " + resetLink,
-        `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #ffffff10; border-radius: 16px; background-color: #0d0d0d; color: #e5e7eb;">
-            <h2 style="color: #ffffff; font-weight: bold; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #262626; padding-bottom: 15px;">S-Call Hub Password Recovery</h2>
-            <p>Hello,</p>
-            <p>We received a request to reset the password associated with your S-Call Hub account. Click the button below to recover your password:</p>
-            <div style="margin: 35px 0; text-align: center;">
-              <a href="${resetLink}" style="background-color: #ffffff; color: #000000; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: 600; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">Reset Password</a>
-            </div>
-            <p>Or copy and paste this link into your address bar:</p>
-            <p style="word-break: break-all; color: #60a5fa; font-size: 13px;">${resetLink}</p>
-            <p style="font-size: 12px; color: #737373; margin-top: 35px;">If you did not make this request, you can safely ignore this email. This reset link will remain active for 1 hour.</p>
-            <hr style="border: 0; border-top: 1px solid #262626; margin: 30px 0;" />
-            <p style="font-size: 11px; text-align: center; color: #404040;">The S-Call Hub Team</p>
+    await sendEmailJs(
+      process.env.EMAILJS_TEMPLATE_RESET || "",
+      email, 
+      "Reset your S-Call Hub Password", 
+      "We received a request to reset your password. Please use the following link: " + resetLink,
+      `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #ffffff10; border-radius: 16px; background-color: #0d0d0d; color: #e5e7eb;">
+          <h2 style="color: #ffffff; font-weight: bold; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #262626; padding-bottom: 15px;">S-Call Hub Password Recovery</h2>
+          <p>Hello,</p>
+          <p>We received a request to reset the password associated with your S-Call Hub account. Click the button below to recover your password:</p>
+          <div style="margin: 35px 0; text-align: center;">
+            <a href="${resetLink}" style="background-color: #ffffff; color: #000000; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: 600; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">Reset Password</a>
           </div>
-        `,
-        resetLink
-      );
-      console.log(`Nodemailer reset email successfully sent to ${email}`);
-    } else {
-      console.log(`[SMTP MOCK MODE] Custom password reset link generated for ${email}:\n${resetLink}`);
-    }
+          <p>Or copy and paste this link into your address bar:</p>
+          <p style="word-break: break-all; color: #60a5fa; font-size: 13px;">${resetLink}</p>
+          <p style="font-size: 12px; color: #737373; margin-top: 35px;">If you did not make this request, you can safely ignore this email. This reset link will remain active for 1 hour.</p>
+          <hr style="border: 0; border-top: 1px solid #262626; margin: 30px 0;" />
+          <p style="font-size: 11px; text-align: center; color: #404040;">The S-Call Hub Team</p>
+        </div>
+      `,
+      resetLink
+    );
+    console.log(`Reset email successfully sent to ${email}`);
 
     res.json({ success: true, message: "Reset link sent successfully." });
   } catch (error: any) {
@@ -360,6 +370,7 @@ app.post("/api/reset-password", async (req, res) => {
     const mockUser = users.find(u => u.email === email);
     if (mockUser) {
       mockUser.password = password;
+      saveDb();
     }
 
     // Clean up used token
