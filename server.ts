@@ -129,7 +129,7 @@ if (process.env.GEMINI_API_KEY) {
 }
 
 // EmailJS Helper
-async function sendEmailJs(template_id: string, to_email: string, subject: string, message: string, html_message: string = "", reset_link: string = "", use_second_account: boolean = false) {
+async function sendEmailJs(template_id: string, to_email: string, subject: string, message: string, html_message: string = "", reset_link: string = "", use_second_account: boolean = false, user_name: string = "", user_email: string = "") {
   const service_id = use_second_account && process.env.EMAILJS_SERVICE_ID_2 ? process.env.EMAILJS_SERVICE_ID_2 : process.env.EMAILJS_SERVICE_ID;
   const public_key = use_second_account && process.env.EMAILJS_PUBLIC_KEY_2 ? process.env.EMAILJS_PUBLIC_KEY_2 : process.env.EMAILJS_PUBLIC_KEY;
   const private_key = use_second_account && process.env.EMAILJS_PRIVATE_KEY_2 ? process.env.EMAILJS_PRIVATE_KEY_2 : process.env.EMAILJS_PRIVATE_KEY;
@@ -148,7 +148,11 @@ async function sendEmailJs(template_id: string, to_email: string, subject: strin
         subject,
         message,
         html_message: html_message || message,
-        reset_link: reset_link
+        reset_link: reset_link,
+        user_name: user_name || to_email,
+        user_email: user_email || to_email,
+        name: user_name || to_email,
+        email: user_email || to_email
       },
       {
         publicKey: public_key,
@@ -220,7 +224,7 @@ app.post("/api/leads", async (req, res) => {
   
   const adminEmail = process.env.SMTP_USER || "s.callhub2811@gmail.com";
   try {
-    await sendEmailJs(process.env.EMAILJS_TEMPLATE_LEAD || "", adminEmail, "New Business Lead", `New Lead from S-Call Hub!\n\nName: ${cleanLead.name}\nPhone: ${cleanLead.phone}\nWork/Business: ${cleanLead.work}\nTime Window: ${cleanLead.time}`);
+    await sendEmailJs(process.env.EMAILJS_TEMPLATE_LEAD || "", adminEmail, "New Business Lead", `New Lead from S-Call Hub!\n\nName: ${cleanLead.name}\nPhone: ${cleanLead.phone}\nWork/Business: ${cleanLead.work}\nTime Window: ${cleanLead.time}`, "", "", false, cleanLead.name, cleanLead.phone);
   } catch (error: any) {
     console.error("Failed to send lead notification securely");
   }
@@ -255,8 +259,8 @@ app.post("/api/signup", async (req, res) => {
   
   try {
     const adminEmail = process.env.SMTP_USER || "s.callhub2811@gmail.com";
-    await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_SIGNUP || "", adminEmail, "New User Signup", `New User Signup\n\nName: ${cleanName}\nEmail: ${cleanEmail}`);
-    await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME || "", cleanEmail, "Welcome to S-Call Hub!", `Hi ${cleanName},\n\nWelcome to S-Call Hub! We're excited to have you on board. You can now explore our AI voice and text agents.\n\nBest regards,\nThe S-Call Hub Team`);
+    await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_SIGNUP || "", adminEmail, "New User Signup", `New User Signup\n\nName: ${cleanName}\nEmail: ${cleanEmail}`, "", "", false, cleanName, cleanEmail);
+    await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME || "", cleanEmail, "Welcome to S-Call Hub!", `Hi ${cleanName},\n\nWelcome to S-Call Hub! We're excited to have you on board. You can now explore our AI voice and text agents.\n\nBest regards,\nThe S-Call Hub Team`, "", "", false, cleanName, cleanEmail);
   } catch (error: any) {
     console.error("Failed to send email securely");
   }
@@ -275,8 +279,8 @@ app.post("/api/login", async (req, res) => {
   const adminEmail = process.env.SMTP_USER || "s.callhub2811@gmail.com";
   if (user) {
     try {
-      await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME_BACK || "", cleanEmail, "Welcome back to S-Call Hub!", `Hi ${user.name},\n\nWelcome back to S-Call Hub! We're glad to see you again.\n\nBest regards,\nThe S-Call Hub Team`, "", "", true);
-      await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_LOGIN || "", adminEmail, "User Login Notification", `User Login Notification\n\nName: ${user.name}\nEmail: ${cleanEmail}`, "", "", true);
+      await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME_BACK || "", cleanEmail, "Welcome back to S-Call Hub!", `Hi ${user.name},\n\nWelcome back to S-Call Hub! We're glad to see you again.\n\nBest regards,\nThe S-Call Hub Team`, "", "", true, user.name, cleanEmail);
+      await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_LOGIN || "", adminEmail, "User Login Notification", `User Login Notification\n\nName: ${user.name}\nEmail: ${cleanEmail}`, "", "", true, user.name, cleanEmail);
     } catch (error) {
       console.error("Failed to send login notification emails");
     }
@@ -284,8 +288,8 @@ app.post("/api/login", async (req, res) => {
     res.json({ success: true, user: { name: user.name, email: user.email } });
   } else {
     try {
-      await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME_BACK || "", cleanEmail, "Welcome back to S-Call Hub!", `Hi there,\n\nWelcome back to S-Call Hub! We're glad to see you again.\n\nBest regards,\nThe S-Call Hub Team`, "", "", true);
-      await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_LOGIN || "", adminEmail, "User Login Notification", `User Login Notification\n\nEmail: ${cleanEmail}`, "", "", true);
+      await sendEmailJs(process.env.EMAILJS_TEMPLATE_WELCOME_BACK || "", cleanEmail, "Welcome back to S-Call Hub!", `Hi there,\n\nWelcome back to S-Call Hub! We're glad to see you again.\n\nBest regards,\nThe S-Call Hub Team`, "", "", true, "User", cleanEmail);
+      await sendEmailJs(process.env.EMAILJS_TEMPLATE_ADMIN_LOGIN || "", adminEmail, "User Login Notification", `User Login Notification\n\nEmail: ${cleanEmail}`, "", "", true, "User", cleanEmail);
     } catch (error) {
       console.error("Failed to send login notification emails");
     }
