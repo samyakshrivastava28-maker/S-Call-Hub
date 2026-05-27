@@ -15,3 +15,9 @@ export interface MessageData {
   role: 'user' | 'ai';
   text: string;
 }
+
+declare global {
+  interface Window {
+    grecaptcha: any;
+  }
+}
